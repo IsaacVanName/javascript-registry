@@ -1,22 +1,24 @@
 var Registry = (function () {
+	var self = this; // reference for storing the private properties in memory
+
 	/*
 	 * Private properties
 	 */
 
-	this._properties = {};
-	this._subscriptions = {};
+	self._properties = {};
+	self._subscriptions = {};
 
 	/*
 	 * Private methods
 	 */
 
-	this._error = function _error(error_message, error_data) {
-		// this should probably be more or less "loud" depending on the level
+	self._error = function _error(error_message, error_data) {
+		// self should probably be more or less "loud" depending on the level
 		console.log('[ERROR - Registry] ' + error_message, error_data);
 	};
 
-	this._publish = function _publish(event_name, event_data) {
-		var event_subscriptions = (this._subscriptions)[event_name],
+	self._publish = function _publish(event_name, event_data) {
+		var event_subscriptions = (self._subscriptions)[event_name],
 		    s;
 
 		if (event_subscriptions && event_subscriptions.length > 0) {
@@ -25,47 +27,47 @@ var Registry = (function () {
 					continue;
 				}
 
-				(event_subscriptions[s]).call(this.api, event_data);		
+				(event_subscriptions[s]).call(self.api, event_data);		
 			}
 		}
 	};
 
-	this._export_properties = function _export_properties() {
+	self._export_properties = function _export_properties() {
 		// may need processing logic here
 
-		return this._properties;
+		return self._properties;
 	};
 
-	this._export_subscriptions = function _export_subscriptions() {
+	self._export_subscriptions = function _export_subscriptions() {
 		// may need processing logic here
 
-		return this._subscriptions;
+		return self._subscriptions;
 	};
 
 	/*
 	 * Public methods
 	 */
 
-	this.api = {
+	self.api = {
 		'get' : function (key) {
-			return this._properties[key];
+			return self._properties[key];
 		},
 
 		'set' : function (key, value) {
 			var event_data = {
 				'key' 		 : key,
 				'value' 	 : value,
-				'previous_value' : this._properties[key]
+				'previous_value' : self._properties[key]
 			};
 
-			this._properties[key] = value;
+			self._properties[key] = value;
 
-			this._publish('Registry.set', event_data);
+			self._publish('Registry.set', event_data);
 		},
 
 		'subscribe' : function (event_name, callback) {
 			if (typeof callback !== 'function') {
-				this._error({
+				self._error({
 					'message' : 'Event subscription must supply a valid function.',
 					'type' 	  : 'high',
 
@@ -77,7 +79,7 @@ var Registry = (function () {
 				return false;
 			}
 
-			this._subscriptions[event_name] = callback;
+			self._subscriptions[event_name] = callback;
 
 			return true;
 		},
@@ -92,25 +94,25 @@ var Registry = (function () {
 
 			switch (export_type) {
 				case 'properties':
-					export_data.properties = this._export_properties();
+					export_data.properties = self._export_properties();
 
 					break;
 
 				case 'subscriptions':
-					export_data.properties = this._export_properties();
+					export_data.properties = self._export_properties();
 
 					break;
 
 				default:
-					export_data.properties = this._export_properties();
-					export_data.subscriptions = this._export_subscriptions();
+					export_data.properties = self._export_properties();
+					export_data.subscriptions = self._export_subscriptions();
 
 					break;
 			}
 
 			event_data.data = export_data;
 
-			this._publish('Registry.export', event_data);
+			self._publish('Registry.export', event_data);
 
 			return export_data;
 		},
@@ -125,14 +127,14 @@ var Registry = (function () {
 			}
 
 			if (values.properties) {
-				this._properties = values.properties;
+				self._properties = values.properties;
 			}
 
 			if (values.subscriptions) {
-				this._subscriptions = values.subscriptions;
+				self._subscriptions = values.subscriptions;
 			}
 
-			this._publish('Registry.import', event_data);
+			self._publish('Registry.import', event_data);
 
 			return true;
 		},
@@ -150,25 +152,27 @@ var Registry = (function () {
 
 			switch (empty_type) {
 				case 'properties':
-					this._properties = {};
+					self._properties = {};
 
 					break;
 
 				case 'subscriptions':
-					this._subscriptions = {};
+					self._subscriptions = {};
 
 					break;
 
 				default:
-					this._properties = {};
-					this._subscriptions = {};
+					self._properties = {};
+					self._subscriptions = {};
 
 					break;
 			}
 	
-			this._publish('Registry.empty', event_data);
+			self._publish('Registry.empty', event_data);
 		}
 	};
 
-	return this.api;
+	return self.api;
 })();
+
+exports.Registry = Registry;
